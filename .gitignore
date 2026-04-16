@@ -1,0 +1,22 @@
+# ================================================================
+#  .gitignore — What git should NEVER track
+# ================================================================
+
+# Real secrets — never commit these
+.env
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Test output
+coverage/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor configs
+.idea/
+.vscode/
+*.swp

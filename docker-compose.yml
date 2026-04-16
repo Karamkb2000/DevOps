@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    container_name: tasks_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - tasks_network
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: tasks_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app/src:/app/src
+      - /app/node_modules
+    networks:
+      - tasks_network
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: tasks_nginx
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    networks:
+      - tasks_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tasks_network:
+    driver: bridge
